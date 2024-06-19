@@ -93,7 +93,7 @@ function init() {
   // Handle window resize
   window.addEventListener('resize', onWindowResize);
   // Add click event listener
-  window.addEventListener('click', onClick);
+  window.addEventListener('touchend', function(e){happens(e)}, false);
 
   // Start animation loop
   animate();
@@ -106,7 +106,7 @@ function onWindowResize() {
   composer.setSize(window.innerWidth, window.innerHeight);
 }
 
-function onClick(event) {
+function touchend(event) {
   // Update mouse coordinates
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
