@@ -93,8 +93,8 @@ function init() {
   // Handle window resize
   window.addEventListener('resize', onWindowResize);
   // Add click event listener
-  window.addEventListener('touchend', function(e){happens(e)}, false);
-
+  window.addEventListener('click', onClick);
+  window.addEventListener('touchstart', onClick);
   // Start animation loop
   animate();
 }
@@ -106,10 +106,17 @@ function onWindowResize() {
   composer.setSize(window.innerWidth, window.innerHeight);
 }
 
-function touchend(event) {
-  // Update mouse coordinates
-  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+function onClick(event) {
+  event.preventDefault(); // Prevent default behavior for touch events
+
+  // Determine event coordinates based on event type
+  if (event.type === 'click') {
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  } else if (event.type === 'touchstart') {
+    mouse.x = (event.touches[0].clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.touches[0].clientY / window.innerHeight) * 2 + 1;
+  }
 
   // Raycasting to find intersected objects
   raycaster.setFromCamera(mouse, camera);
@@ -119,14 +126,16 @@ function touchend(event) {
     // If the model is clicked, start the animation
     if (mixer) {
       const action = mixer._actions[0]; // Assuming you want to control the first animation clip
-      action.paused = !action.paused; // Toggle pause
-      if (!action.isRunning()) {
+      if (action.paused) {
+        action.paused = false; // Unpause the action
+        action.play();
+        action.loop = THREE.LoopOnce; // Ensure it only loops once
+        action.reset();
         action.play();
       }
     }
   }
 }
-
 function animate() {
   requestAnimationFrame(animate);
 
