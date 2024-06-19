@@ -8,9 +8,18 @@ let scene, camera, renderer, composer, bloomPass, mixer, model;
 const clock = new THREE.Clock();
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
+const boxSize = 1;
+
 
 function init() {
   scene = new THREE.Scene();
+
+const boxGeometry = new THREE.BoxGeometry(boxSize, boxSize, boxSize);
+const boxMaterial = new THREE.MeshBasicMaterial({ color: 0xf00000, transparent: true, opacity: 0.0 });
+const clickableBox = new THREE.Mesh(boxGeometry, boxMaterial);
+clickableBox.position.set(0, 0, 0); // Center of the screen
+scene.add(clickableBox);
+
 
   // Adjust camera position and lookAt
   camera = new THREE.PerspectiveCamera(5, window.innerWidth / window.innerHeight, 0.5, 50000);
@@ -110,13 +119,48 @@ function onClick(event) {
   event.preventDefault(); // Prevent default behavior for touch events
 
   // Determine event coordinates based on event type
+  let mouseCoords;
   if (event.type === 'click') {
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    mouseCoords = { x: event.clientX, y: event.clientY };
   } else if (event.type === 'touchstart') {
-    mouse.x = (event.touches[0].clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.touches[0].clientY / window.innerHeight) * 2 + 1;
+    mouseCoords = { x: event.touches[0].clientX, y: event.touches[0].clientY };
   }
+
+  // Calculate normalized device coordinates (-1 to +1)
+  const normalizedCoords = {
+    x: (mouseCoords.x / window.innerWidth) * 2 - 1,
+    y: -(mouseCoords.y / window.innerHeight) * 2 + 1
+  };
+
+  // Check if the click/touch intersects with the clickable box
+  if (isInsideClickableBox(normalizedCoords)) {
+    // Trigger animation
+    if (mixer) {
+      const action = mixer._actions[0]; // Assuming you want to control the first animation clip
+      if (action.paused) {
+        action.paused = false;
+        action.loop = THREE.LoopOnce; // Ensure it only loops once
+        action.reset();
+        action.play();
+      }
+    }
+  }
+
+
+function isInsideClickableBox(coords) {
+  // Define the boundaries of the clickable box
+  const boxHalfSize = boxSize / 2;
+  const boxCenter = new THREE.Vector2(0, 0); // Center of the screen
+
+  // Check if the coordinates are inside the box boundaries
+  return (
+    coords.x >= boxCenter.x - boxHalfSize &&
+    coords.x <= boxCenter.x + boxHalfSize &&
+    coords.y >= boxCenter.y - boxHalfSize &&
+    coords.y <= boxCenter.y + boxHalfSize
+  );
+}
+
 
   // Raycasting to find intersected objects
   raycaster.setFromCamera(mouse, camera);
